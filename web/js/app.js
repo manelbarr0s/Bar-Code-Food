@@ -239,7 +239,7 @@
     if (info.expiry) {
       return { kind: 'exact', date: calendarDay(info.expiry.date), typeLabel: TYPE_LABEL[info.expiry.type] || 'Validade' };
     }
-    var est = ShelfLife.estimate(product && product.categories_tags, scannedAt);
+    var est = product ? ShelfLife.estimate(product.categories_tags, scannedAt, productName(product)) : null;
     if (!est) return { kind: 'unknown' };
     if (est.none) return { kind: 'none', label: est.label };
     return { kind: 'estimate', date: est.from, to: est.to, label: est.label, where: est.where };

@@ -82,3 +82,15 @@ test('Estimativa por categoria', () => {
   assert.equal(ShelfLife.estimate(['en:wines'], base).none, true);
   assert.equal(ShelfLife.estimate(['en:unknown-thing'], base), null);
 });
+
+test('Tostas e torradas não contam como pão fresco', () => {
+  const base = new Date(2026, 9, 19);
+  const generic = ['en:plant-based-foods-and-beverages', 'en:plant-based-foods', 'en:cereals-and-potatoes', 'en:breads'];
+  const tostas = ShelfLife.estimate(generic, base, 'Mini Tostas');
+  assert.equal(tostas.label, 'Tostas, torradas e crackers');
+  assert.ok(tostas.from - base >= 180 * 86400000 - 3600000);
+  assert.equal(ShelfLife.estimate(generic, base, 'Torradas integrais').label, 'Tostas, torradas e crackers');
+  assert.equal(ShelfLife.estimate(['en:breads', 'en:rusks'], base, '').label, 'Tostas, torradas e crackers');
+  assert.equal(ShelfLife.estimate(generic, base, 'Pão de Mafra').label, 'Pão');
+  assert.equal(ShelfLife.estimate(generic, base, 'Bolo de bolacha').label, 'Pão');
+});

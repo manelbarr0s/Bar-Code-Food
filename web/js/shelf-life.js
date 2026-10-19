@@ -47,6 +47,11 @@
     { tags: ['en:beers'], label: 'Cerveja', days: [120, 270], where: PANTRY },
     { tags: ['en:sodas', 'en:carbonated-drinks', 'en:soft-drinks'], label: 'Refrigerante', days: [180, 270], where: PANTRY },
 
+    // Padaria seca: muitas vezes o Open Food Facts só lhe põe a categoria genérica "pão",
+    // por isso também se reconhece pelo nome.
+    { tags: ['en:rusks', 'en:crispbreads', 'en:toasts', 'en:melba-toasts', 'en:crackers', 'en:breadsticks', 'en:breadcrumbs', 'en:dry-breads', 'en:croutons'],
+      names: /\b(mini[- ]?)?(tostas?|torradas?|tostadas?|crackers?|grissinos?|palitos de pao|pao ralado|croutons?|rusks?|crispbreads?)\b/,
+      label: 'Tostas, torradas e crackers', days: [180, 365], where: PANTRY },
     { tags: ['en:sliced-breads', 'en:sandwich-breads'], label: 'Pão de forma', days: [5, 10], where: PANTRY },
     { tags: ['en:breads'], label: 'Pão', days: [2, 5], where: PANTRY },
     { tags: ['en:pastries', 'en:viennoiseries'], label: 'Bolos e pastelaria', days: [2, 5], where: PANTRY },
@@ -85,13 +90,21 @@
   }
 
   // Devolve {label, where, from, to} ou {label, none:true} ou null.
-  function estimate(categoriesTags, scannedAt) {
-    if (!categoriesTags || !categoriesTags.length) return null;
-    var tags = categoriesTags.map(function (t) { return String(t).toLowerCase(); });
+  // As categorias decidem; o nome do produto só serve as regras que têm "names".
+  function normalize(text) {
+    return String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function estimate(categoriesTags, scannedAt, productName) {
+    var tags = (categoriesTags || []).map(function (t) { return String(t).toLowerCase(); });
+    var name = normalize(productName);
+    if (!tags.length && !name) return null;
     var base = scannedAt || new Date();
     for (var i = 0; i < RULES.length; i++) {
       var rule = RULES[i];
-      if (rule.tags.some(function (t) { return tags.indexOf(t) !== -1; })) {
+      var byTag = rule.tags.some(function (t) { return tags.indexOf(t) !== -1; });
+      var byName = rule.names && name && rule.names.test(name);
+      if (byTag || byName) {
         if (rule.none) return { label: rule.label, none: true };
         return { label: rule.label, where: rule.where, from: addDays(base, rule.days[0]), to: addDays(base, rule.days[1]) };
       }
